@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints
+
+# Data
+*.npz
+*.csv
+data/
+
+# Models & Checkpoints
+*.pth
+*.pkl
+checkpoints/
+GS_Models/
+
+# Kaggle
+/kaggle/working/
