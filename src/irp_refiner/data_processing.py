@@ -17,7 +17,7 @@ def find_all_noisy_captions(data_raw, similarity_threshold=0.50):
     num_images = image_embd.shape[0]
     noisy_indices_set = set() 
 
-    for j in tqdm(range(num_images), desc="analysing images for noise"):
+    for j in tqdm(range(num_images), desc="Analysing images: "):
         caption_indices = np.where(label[:, j])[0]
 
         if len(caption_indices) < 2:

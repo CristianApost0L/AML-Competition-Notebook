@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from src.irp_refiner import config
 
 class SwiGLU(nn.Module):
     def forward(self, x):
@@ -34,10 +35,10 @@ class ResidualMLP(nn.Module):
     """
     A non-linear MLP built by stacking residual blocks (ResNet style).
     """
-    def __init__(self, input_dim, output_dim,
-                 hidden_dim,
-                 num_hidden_layers,
-                 dropout_p):
+    def __init__(self, input_dim=config.D_X, output_dim=config.D_Y,
+                 hidden_dim=config.HIDDEN_DIM,
+                 num_hidden_layers=config.NUM_HIDDEN_LAYERS,
+                 dropout_p=config.DROPOUT_P):
         super().__init__()
 
         self.input_layer = nn.Sequential(
@@ -59,5 +60,5 @@ class ResidualMLP(nn.Module):
         out = self.input_layer(x)
         for block in self.hidden_blocks:
             out = block(out)
-        out = self.output_layer(out)
+        #out = self.output_layer(out)
         return out

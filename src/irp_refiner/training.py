@@ -32,6 +32,7 @@ def train_model(model, train_loader, val_loader, device, epochs, lr,
     best_val_loss = float('inf')
     epochs_no_improve = 0
     start_epoch = 0
+    tqdm_every = 5
     
     if resume and Path(save_path).exists():
         try:
@@ -58,12 +59,17 @@ def train_model(model, train_loader, val_loader, device, epochs, lr,
             print(f"Failed to load checkpoint: {e}. Starting from scratch...")
             start_epoch = 0
 
+    print("Showing only every", tqdm_every, "epochs.")
+
     for epoch in range(start_epoch, epochs):
+        # Enable tqdm only every N epochs
+        use_tqdm = (epoch % tqdm_every == 0)
+        data_iter = tqdm(train_loader, desc=f"Training Epoch {epoch+1}/{epochs}", leave=False) if use_tqdm else train_loader
+        
         model.train()
         train_loss = 0
-        pbar = tqdm(train_loader, desc=f"Training (CLIP Loss) Epoch {epoch+1}/{epochs}", leave=False)
 
-        for X_batch, y_batch in pbar:
+        for X_batch, y_batch in data_iter:
             X_batch, y_batch = X_batch.to(device), y_batch.to(device)
 
             optimizer.zero_grad()
@@ -87,7 +93,8 @@ def train_model(model, train_loader, val_loader, device, epochs, lr,
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             optimizer.step()
             train_loss += loss.item()
-            pbar.set_postfix(loss=f"{loss.item():.4f}", T=f"{logit_scale_exp.item():.2f}", lr=f"{optimizer.param_groups[0]['lr']:.2e}")
+            if use_tqdm:
+                data_iter.set_postfix(loss=f"{loss.item():.4f}", T=f"{logit_scale_exp.item():.2f}", lr=f"{optimizer.param_groups[0]['lr']:.2e}")
 
         train_loss /= len(train_loader)
 
