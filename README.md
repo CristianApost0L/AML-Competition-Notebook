@@ -4,7 +4,7 @@ This project implements a two-stage model (IRP + ResidualMLP) for text-to-image 
 
 ## Project Structure
 
-* `/src/irp_refiner`: Core Python package with all logic.
+* `/src`: Core Python package with all logic.
 * `/scripts`: Executable scripts for training and prediction.
 * `/notebooks`: Jupyter notebooks for experimentation.
 
@@ -17,7 +17,7 @@ This project implements a two-stage model (IRP + ResidualMLP) for text-to-image 
 
 2.  **Download Data:**
     * Place the `train.npz` and `test.clean.npz` files into a `/data` directory (e.g., `/kaggle/input/aml-competition/`).
-    * Update the paths in `src/irp_refiner/config.py` if needed.
+    * Update the paths in `src/config.py` if needed.
 
 3.  **Run Training:**
     * This will execute the K-Fold cross-validation and save models to the `checkpoints` directory.

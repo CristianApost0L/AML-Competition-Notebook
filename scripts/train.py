@@ -11,12 +11,12 @@ import gc
 # Add src directory to Python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from src.irp_refiner import config
-from src.irp_refiner.utils import set_seed
-from src.irp_refiner.data_processing import load_and_clean_data
-from src.irp_refiner.models.irp import IRPTranslator
-from src.irp_refiner.models.mlp import ResidualMLP
-from src.irp_refiner.training import train_model
+from src import config
+from src.utils import set_seed
+from src.data_processing import load_and_clean_data
+from src.models.irp import IRPTranslator
+from src.models.mlp import ResidualMLP
+from src.training import train_irp_refiner
 
 def main():
     print(f"Using device: {config.DEVICE}")
@@ -81,7 +81,7 @@ def main():
 
         model_path_fold = f"{config.CHECKPOINT_DIR}mlp_fold_{fold}.pth"
 
-        train_model(
+        train_irp_refiner(
             model_fold, train_loader_fold, val_loader_fold, config.DEVICE,
             epochs=config.EPOCHS, lr=config.LR, save_path=model_path_fold,
             patience=config.EARLY_STOP_PATIENCE, min_delta=config.MIN_IMPROVEMENT_DELTA,

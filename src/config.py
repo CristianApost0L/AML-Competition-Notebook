@@ -34,3 +34,20 @@ IRP_RIDGE = 1e-4
 
 # --- Data Cleaning ---
 NOISE_THRESHOLD = 0.50
+CLEAN_DATA = True 
+
+# --- Config from Notebook 2 (Direct Models) ---
+USE_COCO_DATASET = False
+MY_DATA_PATH = "/kaggle/input/aml-coco-dataset-10/coco_embeddings_10pct.npz"
+
+# Training HParams for ModernSwiGLU
+MODERN_HPARAMS = {
+    'layers': 5, 
+    'hidden_dim': 1536, 
+    'lr': 0.000879, 
+    'weight_decay': 0.000178,
+    'drop_path': 0.252, 
+    'batch_size': 512, 
+    'epochs': 500
+}
+MODERN_SEEDS = [42, 123, 999]

@@ -10,10 +10,10 @@ from tqdm import tqdm
 # Add src directory to Python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from src.irp_refiner import config
-from src.irp_refiner.baseline_utils import load_data, generate_submission
-from src.irp_refiner.models.mlp import ResidualMLP
-from src.irp_refiner.ensembling import EnsembleWrapper
+from src import config
+from src.baseline_utils import load_data, generate_submission
+from src.models.mlp import ResidualMLP
+from src.ensembling import EnsembleWrapper
 
 def run_single_model_prediction(fold_num):
     print(f"\n--- Generating Submission (Single Model, Fold {fold_num}) ---")

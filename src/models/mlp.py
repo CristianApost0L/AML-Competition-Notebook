@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from src.irp_refiner import config
+from src import config
 
 class SwiGLU(nn.Module):
     def forward(self, x):
@@ -60,5 +60,5 @@ class ResidualMLP(nn.Module):
         out = self.input_layer(x)
         for block in self.hidden_blocks:
             out = block(out)
-        #out = self.output_layer(out)
+        out = self.output_layer(out)
         return out

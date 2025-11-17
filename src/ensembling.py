@@ -3,9 +3,7 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader, TensorDataset
 import joblib
 import numpy as np
-
-# Import from our new structure
-from .models.mlp import ResidualMLP
+from .models.mlp import ResidualMLP as ResidualMLP_IRP
 from . import config
 
 class EnsembleWrapper:
@@ -16,7 +14,7 @@ class EnsembleWrapper:
 
         # Load all MLP models
         for path in model_paths:
-            model = ResidualMLP(
+            model = ResidualMLP_IRP(
                 input_dim=config.D_X, output_dim=config.D_Y, hidden_dim=config.HIDDEN_DIM,
                 num_hidden_layers=config.NUM_HIDDEN_LAYERS, dropout_p=config.DROPOUT_P
             ).to(self.device)
@@ -78,3 +76,33 @@ class EnsembleWrapper:
         ensemble_preds_norm = F.normalize(ensemble_preds_raw, p=2, dim=1)
         
         return ensemble_preds_norm.cpu().numpy()
+    
+# --- Wrapper 2: For Direct Model Ensemble (from Notebook 2) ---
+class DirectEnsembleWrapper:
+    """ Wrapper per valutazione Ensemble. Media i vettori e normalizza. """
+    def __init__(self, models, device):
+        self.models = [m.to(device) for m in models]
+        self.device = device
+        for m in self.models:
+            m.eval()
+        print(f"DirectEnsembleWrapper loaded with {len(self.models)} models.")
+            
+    @torch.inference_mode()
+    def translate(self, x_data, batch_size=512):
+        if isinstance(x_data, np.ndarray):
+            x_data = torch.from_numpy(x_data).float()
+        
+        loader = DataLoader(TensorDataset(x_data), batch_size=batch_size, shuffle=False)
+        accum = torch.zeros(len(x_data), config.D_Y) # Use config for output dim
+        
+        for model in self.models:
+            model.eval()
+            preds_single_model = []
+            for (bx,) in loader:
+                bx = bx.to(self.device)
+                # Assumes model output is raw, so normalize it
+                preds_single_model.append(F.normalize(model(bx), dim=1).cpu())
+            accum += torch.cat(preds_single_model)
+            
+        final_preds = F.normalize(accum, p=2, dim=1) # Average and re-normalize
+        return final_preds.numpy()
