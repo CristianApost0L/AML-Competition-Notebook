@@ -75,11 +75,11 @@ def load_and_prep_data_direct(train_path, coco_path, use_coco, noise_threshold, 
     
     This function prepares data for full-retrieval evaluation.
     """
-    print("\\n--- 1. Configurazione Parametri ---")
+    print("\n--- 1. Configurazione Parametri ---")
     np.random.seed(random_seed)
     torch.manual_seed(random_seed)
 
-    print("\\n--- 2. Caricamento e Merge dei Dataset ---")
+    print("\n--- 2. Caricamento e Merge dei Dataset ---")
     if use_coco:
         # (Insert the entire 'if USE_COCO_DATASET:' block from Cell 4 here)
         # ...
@@ -97,7 +97,7 @@ def load_and_prep_data_direct(train_path, coco_path, use_coco, noise_threshold, 
         label_mat = train_data['captions/label']
         print(f"  Dataset caricato: {label_mat.shape[0]} captions, {label_mat.shape[1]} immagini.")
 
-    print("\\n--- 3. Preparazione Dati e Pulizia Rumore ---")
+    print("\n--- 3. Preparazione Dati e Pulizia Rumore ---")
     train_data_dict = {
         'captions/text': captions_text, 'captions/embeddings': caption_embd_np, 
         'images/embeddings': gallery_images_embeddings, 'captions/label': label_mat,
@@ -130,7 +130,7 @@ def load_and_prep_data_direct(train_path, coco_path, use_coco, noise_threshold, 
     del caption_embd_np, noisy_indices_set
     gc.collect()
 
-    print("\\n--- 4. Applicazione Filtro e Split Train/Val ---")
+    print("\n--- 4. Applicazione Filtro e Split Train/Val ---")
     X = X[mask]
     y = y[mask]
     label = torch.from_numpy(label_mat[mask])
@@ -152,7 +152,7 @@ def load_and_prep_data_direct(train_path, coco_path, use_coco, noise_threshold, 
     del X, y
     gc.collect()
 
-    print("\\n--- 5. Preparazione Galleria per Retrieval ---")
+    print("\n--- 5. Preparazione Galleria per Retrieval ---")
     label_cpu = label.cpu() 
     img_VAL_SPLIT = label_cpu[~TRAIN_SPLIT].sum(dim=0) > 0
     del label_cpu

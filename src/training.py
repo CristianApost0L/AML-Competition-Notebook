@@ -38,6 +38,7 @@ def train_irp_refiner(model, train_loader, val_loader, device, epochs, lr,
     epochs_no_improve = 0
     start_epoch = 0
     tqdm_every = 5
+    best_state = None
     
     if resume and Path(save_path).exists():
         try:
@@ -58,6 +59,8 @@ def train_irp_refiner(model, train_loader, val_loader, device, epochs, lr,
             best_val_loss = checkpoint.get('best_val_loss', float('inf'))
             epochs_no_improve = checkpoint.get('epochs_no_improve', 0)
             
+            best_state = copy.deepcopy(model.state_dict())
+            
             print(f"   ✓ Resuming from epoch {start_epoch}")
             
         except Exception as e:
@@ -67,7 +70,6 @@ def train_irp_refiner(model, train_loader, val_loader, device, epochs, lr,
     print("Showing only every", tqdm_every, "epochs.")
 
     for epoch in range(start_epoch, epochs):
-        # Enable tqdm only every N epochs
         use_tqdm = (epoch % tqdm_every == 0)
         data_iter = tqdm(train_loader, desc=f"Training Epoch {epoch+1}/{epochs}", leave=False) if use_tqdm else train_loader
         
@@ -109,17 +111,13 @@ def train_irp_refiner(model, train_loader, val_loader, device, epochs, lr,
             for X_batch, y_batch in val_loader:
                 X_batch, y_batch = X_batch.to(device), y_batch.to(device)
                 outputs = model(X_batch)
-
                 outputs_norm = outputs
                 target_norm = y_batch
-
                 logit_scale_exp = logit_scale.exp().clamp(max=100)
                 logits_per_output = logit_scale_exp * torch.matmul(outputs_norm, target_norm.t())
                 logits_per_target = logits_per_output.t()
-
                 N = outputs.size(0)
                 labels = torch.arange(N, dtype=torch.long).to(device)
-
                 loss_outputs = loss_fn(logits_per_output, labels)
                 loss_targets = loss_fn(logits_per_target, labels)
                 loss = (loss_outputs + loss_targets) / 2
@@ -132,16 +130,21 @@ def train_irp_refiner(model, train_loader, val_loader, device, epochs, lr,
         else:
             plateau_scheduler.step(val_loss)
         
+        
         current_lr = optimizer.param_groups[0]['lr']
-        print(f"Epoch {epoch+1}: Train Loss = {train_loss:.6f}, Val Loss = {val_loss:.6f}, LogitT = {logit_scale_exp.item():.4f}, LR = {current_lr:.2e}")
+
+        if (epoch + 1) % tqdm_every == 0 or epoch < 5:
+            print(f"   Ep {epoch+1:03d} | Train: {train_loss:.4f} | Val: {val_loss:.4f} | "
+                  f"Temp: {logit_scale_exp.item():.2f} | LR: {current_lr:.2e}")
         
         if val_loss < best_val_loss - min_delta:
             best_val_loss = val_loss
             epochs_no_improve = 0
-            Path(save_path).parent.mkdir(parents=True, exist_ok=True)
+            best_state = copy.deepcopy(model.state_dict())
             
+            Path(save_path).parent.mkdir(parents=True, exist_ok=True)
             torch.save({
-                'model_state_dict': model.state_dict(),
+                'model_state_dict': best_state,
                 'logit_scale': logit_scale,
                 'optimizer_state_dict': optimizer.state_dict(),
                 'scheduler_state_dict': scheduler.state_dict(),
@@ -150,16 +153,25 @@ def train_irp_refiner(model, train_loader, val_loader, device, epochs, lr,
                 'best_val_loss': best_val_loss,
                 'epochs_no_improve': epochs_no_improve
             }, save_path)
-            print(f"   ✓ Saved 'best' model (val_loss={val_loss:.6f}) to {save_path}")
+            
         else:
             epochs_no_improve += 1
-            print(f"   (No improvement: {epochs_no_improve}/{patience})")
-
+            
         if epochs_no_improve >= patience:
-            print(f"\\n--- Early Stopping ---")
+            print(f"   ⛔ Early Stopping at epoch {epoch+1} (no improvement for {patience} epochs)")
             break
 
     print(f"\\nTraining completed. Best Val Loss: {best_val_loss:.6f}")
+    
+    if best_state:
+        model.load_state_dict(best_state)
+    else:
+        try:
+            checkpoint = torch.load(save_path, map_location=device)
+            model.load_state_dict(checkpoint['model_state_dict'])
+        except Exception as e:
+            print(f"Warning: could not load best state at end of training. {e}")
+            
     return best_val_loss
 
 def train_standard_direct(model, train_loader, val_loader, epochs, lr, save_path, patience, use_norm_in_loss, device):
@@ -175,7 +187,7 @@ def train_standard_direct(model, train_loader, val_loader, epochs, lr, save_path
     no_improve = 0
     
     loss_strategy = "Norm-in-Loss" if use_norm_in_loss else "No-Norm-Loss (Raw)"
-    print(f"\\n--- Inizio Training Standard Direct ({save_path}) ---")
+    print(f"\n--- Inizio Training Standard Direct ({save_path}) ---")
     print(f"Strategia Loss: {loss_strategy}")
     
     for epoch in range(epochs):
@@ -236,7 +248,6 @@ def train_standard_direct(model, train_loader, val_loader, epochs, lr, save_path
 def train_single_modern_model(seed, X_tr, y_tr, X_vl, y_vl, hparams, patience, device):
     """
     Training function for the ModernSwiGLU model.
-    From aml-notebook_finale.ipynb.
     """
     random.seed(seed); np.random.seed(seed); torch.manual_seed(seed)
     if torch.cuda.is_available(): torch.cuda.manual_seed_all(seed)
@@ -272,7 +283,7 @@ def train_single_modern_model(seed, X_tr, y_tr, X_vl, y_vl, hparams, patience, d
     best_state = None
     no_improve = 0
     
-    print(f"\\n🚀 Training Modern FIXED (Seed {seed})")
+    print(f"\n Training Modern (Seed {seed})")
     print(f"   Config: {hparams['layers']}L, HD={hparams['hidden_dim']}, DP={hparams['drop_path']:.3f}")
     
     for epoch in range(epochs):
@@ -332,13 +343,13 @@ def train_single_modern_model(seed, X_tr, y_tr, X_vl, y_vl, hparams, patience, d
 
 def create_direct_ensemble(X_train, y_train, X_val, y_val, device):
     """
-    Trains the diverse ensemble (E) from Notebook 2.
+    Trains the diverse ensemble E.
     """
     train_dl = DataLoader(TensorDataset(X_train, y_train), batch_size=512, shuffle=True)
     val_dl = DataLoader(TensorDataset(X_val, y_val), batch_size=512, shuffle=False)
     models = []
     
-    print("\\n" + "="*60 + "\\nTraining Ensemble Member 1/3: Deep ResidualMLP_BN" + "\\n" + "="*60)
+    print("\n" + "="*60 + "\nTraining Ensemble Member 1/3: Deep ResidualMLP_BN" + "\n" + "="*60)
     m1 = ResidualMLP_BN(num_layers=3, dropout=0.3, hidden_dim=1536).to(device)
     m1 = train_standard_direct(
         m1, train_dl, val_dl, epochs=100, lr=5e-4,
@@ -346,7 +357,7 @@ def create_direct_ensemble(X_train, y_train, X_val, y_val, device):
     )
     models.append(m1)
     
-    print("\\n" + "="*60 + "\\nTraining Ensemble Member 2/3: Wide ResidualMLP_BN" + "\\n" + "="*60)
+    print("\n" + "="*60 + "\nTraining Ensemble Member 2/3: Wide ResidualMLP_BN" + "\n" + "="*60)
     m2 = ResidualMLP_BN(num_layers=2, dropout=0.4, hidden_dim=2048).to(device)
     m2 = train_standard_direct(
         m2, train_dl, val_dl, epochs=100, lr=5e-4,
@@ -354,7 +365,7 @@ def create_direct_ensemble(X_train, y_train, X_val, y_val, device):
     )
     models.append(m2)
     
-    print("\\n" + "="*60 + "\\nTraining Ensemble Member 3/3: SwiGLU" + "\\n" + "="*60)
+    print("\n" + "="*60 + "\nTraining Ensemble Member 3/3: SwiGLU" + "\n" + "="*60)
     m3 = SwiGLUMLP(num_layers=2, dropout=0.4, hidden_dim=1536).to(device)
     m3 = train_standard_direct(
         m3, train_dl, val_dl, epochs=100, lr=5e-4,
