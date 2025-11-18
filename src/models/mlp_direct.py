@@ -4,11 +4,13 @@ import torch.nn.functional as F
 
 # --- Modello 1: SwiGLU MLP Semplice (Notebook 2, Modello C) ---
 class SwiGLU(nn.Module):
+    """SwiGLU activation: splits input, applies SiLU to one half, multiplies with the other half."""
     def forward(self, x):
         x, gate = x.chunk(2, dim=-1)
         return F.silu(gate) * x
 
 class ResidualBlockSwiGLU(nn.Module):
+    """Residual block using SwiGLU activation and LayerNorm for MLPs."""
     def __init__(self, dim, dropout_p=0.3):
         super().__init__()
         self.block = nn.Sequential(
@@ -21,6 +23,7 @@ class ResidualBlockSwiGLU(nn.Module):
         return self.final_dropout(self.final_activation(x + self.block(x)))
 
 class SwiGLUMLP(nn.Module):
+    """MLP model with input projection, multiple SwiGLU-based residual blocks, and output layer."""
     def __init__(self, input_dim=1024, output_dim=1536, hidden_dim=1536, num_layers=2, dropout=0.3):
         super().__init__()
         self.input_layer = nn.Sequential(
@@ -39,6 +42,7 @@ class SwiGLUMLP(nn.Module):
 
 # --- Modello 2: Residual MLP (Notebook 2, Modello I) ---
 class ResidualBlock(nn.Module):
+    """Standard residual block with GELU activation and LayerNorm for MLPs."""
     def __init__(self, dim, dropout_p=0.3):
         super().__init__()
         self.block = nn.Sequential(
@@ -51,7 +55,7 @@ class ResidualBlock(nn.Module):
         return self.final_dropout(self.final_activation(x + self.block(x)))
 
 class ResidualMLP_BN(nn.Module):
-    """ Uses BatchNorm instead of LayerNorm """
+    """Residual MLP using BatchNorm instead of LayerNorm, with configurable depth and dropout."""
     def __init__(self, input_dim=1024, output_dim=1536, hidden_dim=1536, num_layers=2, dropout=0.3):
         super().__init__()
         self.input_layer = nn.Sequential(
@@ -70,6 +74,7 @@ class ResidualMLP_BN(nn.Module):
 
 # --- Modello 3: Modern SwiGLU (Notebook 2, SOTA) ---
 class RMSNorm(nn.Module):
+    """Root Mean Square Layer Normalization (RMSNorm) implementation."""
     def __init__(self, dim: int, eps: float = 1e-6):
         super().__init__(); self.eps = eps; self.weight = nn.Parameter(torch.ones(dim))
     def _norm(self, x):
@@ -85,6 +90,7 @@ def drop_path(x, drop_prob=0., training=False):
     random_tensor.floor_(); return x.div(keep_prob) * random_tensor
 
 class ResidualBlockModern(nn.Module):
+    """Modern residual block with RMSNorm, SwiGLU-style gating, and optional stochastic depth."""
     def __init__(self, dim, drop_path=0.0):
         super().__init__(); hidden_dim = dim * 2; self.norm = RMSNorm(dim)
         self.w1 = nn.Linear(dim, hidden_dim); self.w2 = nn.Linear(dim, hidden_dim)
@@ -95,6 +101,7 @@ class ResidualBlockModern(nn.Module):
         return residual + x
 
 class ModernSwiGLU(nn.Module):
+    """Modern MLP with RMSNorm, multiple advanced residual blocks, and orthogonal initialization."""
     def __init__(self, input_dim=1024, output_dim=1536, hidden_dim=1536, num_layers=4, drop_path_rate=0.1):
         super().__init__()
         self.input_proj = nn.Sequential(nn.Linear(input_dim, hidden_dim), RMSNorm(hidden_dim))

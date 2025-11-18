@@ -7,6 +7,14 @@ from tqdm.auto import tqdm
 # --- Base Metrics ---
 
 def mrr(pred_indices: np.ndarray, gt_indices: np.ndarray) -> float:
+    """
+    Computes Mean Reciprocal Rank (MRR) for retrieval results.
+    Args:
+        pred_indices (np.ndarray): Predicted ranked indices for each query.
+        gt_indices (np.ndarray): Ground truth indices for each query.
+    Returns:
+        float: Mean reciprocal rank score.
+    """
     reciprocal_ranks = []
     for i in range(len(gt_indices)):
         matches = np.where(pred_indices[i] == gt_indices[i])[0]
@@ -17,6 +25,15 @@ def mrr(pred_indices: np.ndarray, gt_indices: np.ndarray) -> float:
     return np.mean(reciprocal_ranks)
 
 def recall_at_k(pred_indices: np.ndarray, gt_indices: np.ndarray, k: int) -> float:
+    """
+    Computes Recall@k for retrieval results.
+    Args:
+        pred_indices (np.ndarray): Predicted ranked indices for each query.
+        gt_indices (np.ndarray): Ground truth indices for each query.
+        k (int): Top-k to consider for recall.
+    Returns:
+        float: Recall@k score.
+    """
     recall = 0
     for i in range(len(gt_indices)):
         if gt_indices[i] in pred_indices[i, :k]:
@@ -25,6 +42,15 @@ def recall_at_k(pred_indices: np.ndarray, gt_indices: np.ndarray, k: int) -> flo
     return recall
 
 def ndcg(pred_indices: np.ndarray, gt_indices: np.ndarray, k: int = 100) -> float:
+    """
+    Computes Normalized Discounted Cumulative Gain (NDCG) at k for retrieval results.
+    Args:
+        pred_indices (np.ndarray): Predicted ranked indices for each query.
+        gt_indices (np.ndarray): Ground truth indices for each query.
+        k (int): Top-k to consider for NDCG.
+    Returns:
+        float: NDCG@k score.
+    """
     ndcg_total = 0.0
     for i in range(len(gt_indices)):
         matches = np.where(pred_indices[i, :k] == gt_indices[i])[0]
@@ -37,6 +63,17 @@ def ndcg(pred_indices: np.ndarray, gt_indices: np.ndarray, k: int = 100) -> floa
 
 @torch.inference_mode()
 def evaluate_retrieval(translated_embd, image_embd, gt_indices, max_indices = 99, batch_size=100):
+    """
+    Evaluates retrieval performance using several metrics (MRR, NDCG, Recall@k, L2 distance).
+    Args:
+        translated_embd (np.ndarray or torch.Tensor): Query/caption embeddings.
+        image_embd (np.ndarray or torch.Tensor): Gallery/image embeddings.
+        gt_indices (np.ndarray): Ground truth indices for each query.
+        max_indices (int): Number of top indices to consider for metrics.
+        batch_size (int): Batch size for evaluation.
+    Returns:
+        dict: Dictionary of evaluation metrics.
+    """
     if isinstance(translated_embd, np.ndarray):
         translated_embd = torch.from_numpy(translated_embd).float()
     if isinstance(image_embd, np.ndarray):
@@ -98,6 +135,14 @@ class MLPWrapper:
         
     @torch.inference_mode()
     def translate(self, x_data, batch_size=1024):
+        """
+        Translates input data using the wrapped model and normalizes the output.
+        Args:
+            x_data (np.ndarray or torch.Tensor): Input data to translate.
+            batch_size (int): Batch size for inference.
+        Returns:
+            np.ndarray: Normalized model outputs.
+        """
         self.model.eval()
         outputs = []
         if isinstance(x_data, np.ndarray):
@@ -119,7 +164,16 @@ def evaluate_retrieval_full(
 ):
     """
     Full-dataset retrieval evaluation (N queries vs M gallery items).
-    From aml-notebook_finale.ipynb.
+    Computes MRR, NDCG, Recall@k, and L2 distance for all queries.
+    Args:
+        translated_embd (np.ndarray or torch.Tensor): Query/caption embeddings.
+        image_embd (np.ndarray or torch.Tensor): Gallery/image embeddings.
+        gt_indices (np.ndarray): Ground truth indices for each query.
+        max_k (int): Maximum k for top-k metrics.
+        batch_size (int): Batch size for evaluation.
+        device (torch.device, optional): Device for computation.
+    Returns:
+        dict: Dictionary of evaluation metrics.
     """
     if isinstance(translated_embd, np.ndarray):
         translated_embd = torch.from_numpy(translated_embd).float()
@@ -190,8 +244,15 @@ def evaluate_retrieval_full(
 @torch.inference_mode()
 def aml_inbatch_retrieval(pred_embeds, target_embeds, batch_size=100):
     """
-    AML Competition-style In-Batch (N-vs-N) retrieval metric.
+    Computes in-batch retrieval metrics (R@1, R@5, R@10, MRR) for N-vs-N retrieval.
+    Args:
+        pred_embeds (np.ndarray or torch.Tensor): Predicted embeddings.
+        target_embeds (np.ndarray or torch.Tensor): Target embeddings.
+        batch_size (int): Batch size for evaluation.
+    Returns:
+        dict: Dictionary with r1, r5, r10, and mrr scores.
     """
+
     pred = F.normalize(pred_embeds, p=2, dim=1)
     targ = F.normalize(target_embeds, p=2, dim=1)
     N = pred.shape[0]

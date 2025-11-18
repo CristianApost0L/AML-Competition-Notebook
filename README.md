@@ -1,36 +1,19 @@
-# IRP-ResidualMLP Refiner Project
+# AML Competition
 
-This project implements a two-stage model (IRP + ResidualMLP) for text-to-image retrieval, refactored from a single notebook into a modular Python repository.
+
+This repository provides two distinct approaches for text-to-image retrieval submissions:
+
+1. **K-Fold Ensemble with IRP + ResidualMLP**: A two-stage model combining an Image-Text Retrieval Pipeline (IRP) with a Residual Multi-Layer Perceptron (ResidualMLP), trained and ensembled using K-Fold cross-validation.
+2. **Ensemble of Three Distinct MLP Adapters**: An alternative approach that ensembles predictions from three independently trained Multi-Layer Perceptron (MLP) adapters.
+
+Both methods are modular, and the codebase is refactored from a single notebook into a clean Python project.
 
 ## Project Structure
 
-* `/src`: Core Python package with all logic.
-* `/scripts`: Executable scripts for training and prediction.
-* `/notebooks`: Jupyter notebooks for experimentation.
+- **`src/`**: Core Python package with all model and utility code
+- **`scripts/`**: Command-line scripts for training and prediction
+- **`notebooks/`**: Jupyter notebooks
 
-## How to Use
+---
 
-1.  **Install Dependencies:**
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-2.  **Download Data:**
-    * Place the `train.npz` and `test.clean.npz` files into a `/data` directory (e.g., `/kaggle/input/aml-competition/`).
-    * Update the paths in `src/config.py` if needed.
-
-3.  **Run Training:**
-    * This will execute the K-Fold cross-validation and save models to the `checkpoints` directory.
-    ```bash
-    python scripts/train.py
-    ```
-
-4.  **Generate Submission:**
-    * To generate a submission using a single fold (e.g., fold 3):
-    ```bash
-    python scripts/predict.py --fold 3
-    ```
-    * To generate an ensemble submission using all K folds:
-    ```bash
-    python scripts/predict.py --ensemble
-    ```
+For more details, see the code and notebooks in this repository.

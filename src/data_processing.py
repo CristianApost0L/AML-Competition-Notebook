@@ -70,11 +70,26 @@ def load_and_clean_data(data_path, noise_threshold):
 
 def load_and_prep_data_direct(train_path, coco_path, use_coco, noise_threshold, val_split_ratio, random_seed):
     """
-    Implements the full data loading, merging, cleaning, and splitting
-    logic from the second notebook (aml-notebook_finale.ipynb, Cell 4).
-    
-    This function prepares data for full-retrieval evaluation.
+    Loads, prepares, and optionally cleans and splits the dataset for direct training and validation.
+
+    Args:
+        train_path (str): Path to the main training dataset.
+        coco_path (str): Path to the COCO dataset (if used).
+        use_coco (bool): Whether to merge the COCO dataset with the main dataset.
+        noise_threshold (float): Cosine similarity threshold for noise removal.
+        val_split_ratio (float): Fraction of data to use for validation.
+        random_seed (int): Seed for reproducibility.
+
+    Returns:
+        X_train (torch.Tensor): Training caption embeddings.
+        y_train (torch.Tensor): Training image embeddings or labels.
+        X_val (torch.Tensor): Validation caption embeddings.
+        y_val (torch.Tensor): Validation image embeddings or labels.
+        val_text_embd (torch.Tensor): Validation caption embeddings (queries).
+        val_img_embd_unique (torch.Tensor): Unique validation image embeddings (gallery).
+        val_label_gt (np.ndarray): Ground truth indices for validation retrieval.
     """
+
     print("\n--- 1. Set seed ---")
     np.random.seed(random_seed)
     torch.manual_seed(random_seed)

@@ -26,6 +26,10 @@ def set_seed(seed):
     return seed_worker
 
 def load_direct_ensemble(device, model_paths):
+    """
+    Load an ensemble of direct MLP models from specified paths.
+    """
+    
     models = []
 
     # ------------------- Model 1 -------------------

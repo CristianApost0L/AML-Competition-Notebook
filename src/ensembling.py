@@ -7,6 +7,10 @@ from .models.mlp import ResidualMLP as ResidualMLP_IRP
 from . import config
 
 class EnsembleWrapper:
+    """
+    Ensemble for two-stage IRP + ResidualMLP models.
+    Translates input using a set of IRP translators and refines with MLPs, averaging predictions.
+    """
     def __init__(self, model_paths, irp_paths, device):
         self.device = device
         self.models = []
@@ -79,7 +83,10 @@ class EnsembleWrapper:
     
 # --- Wrapper 2: For Direct Model Ensemble (from Notebook 2) ---
 class DirectEnsembleWrapper:
-    """ Wrapper per valutazione Ensemble. Media i vettori e normalizza. """
+    """
+    Ensemble for direct MLP models (no IRP).
+    Averages and normalizes predictions from multiple models for robust output.
+    """
     def __init__(self, models, device):
         self.models = [m.to(device) for m in models]
         self.device = device

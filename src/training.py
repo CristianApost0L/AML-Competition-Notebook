@@ -14,6 +14,9 @@ from .models.mlp_direct import ResidualMLP_BN, SwiGLUMLP, ModernSwiGLU
 
 def train_irp_refiner(model, train_loader, val_loader, device, epochs, lr,
                      save_path, patience=10, min_delta=1e-5, resume=True):
+    """
+    Trains a two-stage IRP + MLP refiner model with temperature scaling and early stopping.
+    """
     
     initial_value = torch.ones([], device=device) * np.log(1 / 0.07)
     logit_scale = nn.Parameter(initial_value)
@@ -176,8 +179,9 @@ def train_irp_refiner(model, train_loader, val_loader, device, epochs, lr,
 
 def train_standard_direct(model, train_loader, val_loader, epochs, lr, save_path, patience, use_norm_in_loss, device):
     """
-    Training function for 'direct' models (ResidualMLP_BN, SwiGLUMLP).
+    Training function for direct models (ResidualMLP_BN, SwiGLUMLP).
     """
+
     logit_scale = nn.Parameter(torch.ones([], device=device) * np.log(1 / 0.07))
     optimizer = optim.AdamW(list(model.parameters()) + [logit_scale], lr=lr, weight_decay=1e-4)
     scheduler = ReduceLROnPlateau(optimizer, 'min', patience=3, factor=0.5, verbose=False)
@@ -246,7 +250,7 @@ def train_standard_direct(model, train_loader, val_loader, epochs, lr, save_path
 
 def train_single_modern_model(seed, X_tr, y_tr, X_vl, y_vl, hparams, patience, device):
     """
-    Training function for the ModernSwiGLU model.
+    Trains a single ModernSwiGLU model with given hyperparameters and early stopping.
     """
     random.seed(seed); np.random.seed(seed); torch.manual_seed(seed)
     if torch.cuda.is_available(): torch.cuda.manual_seed_all(seed)
@@ -342,8 +346,9 @@ def train_single_modern_model(seed, X_tr, y_tr, X_vl, y_vl, hparams, patience, d
 
 def create_direct_ensemble(X_train, y_train, X_val, y_val, device):
     """
-    Trains the diverse ensemble E.
+    Trains and returns an ensemble of three diverse direct models (ResidualMLP_BN and SwiGLUMLP).
     """
+
     train_dl = DataLoader(TensorDataset(X_train, y_train), batch_size=512, shuffle=True)
     val_dl = DataLoader(TensorDataset(X_val, y_val), batch_size=512, shuffle=False)
     models = []

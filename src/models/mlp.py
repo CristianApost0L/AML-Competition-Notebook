@@ -4,16 +4,13 @@ import torch.nn.functional as F
 from src import config
 
 class SwiGLU(nn.Module):
+    """SwiGLU activation: splits input, applies SiLU to one half, multiplies with the other half."""
     def forward(self, x):
         a, b = x.chunk(2, dim=-1)
         return a * F.silu(b)
 
 class ResidualBlock(nn.Module):
-    
-    """
-    A residual block with two linear layers, layer normalization,
-    GELU activation, and dropout.
-    """
+    """Residual block with two linear layers, LayerNorm, GELU activation, and dropout."""
 
     def __init__(self, dim, dropout_p=0.3):
         super().__init__()
@@ -32,9 +29,8 @@ class ResidualBlock(nn.Module):
         return self.final_dropout(self.final_activation(x + self.block(x)))
 
 class ResidualMLP(nn.Module):
-    """
-    A non-linear MLP built by stacking residual blocks (ResNet style).
-    """
+    """Non-linear MLP built by stacking multiple residual blocks (ResNet style)."""
+
     def __init__(self, input_dim=config.D_X, output_dim=config.D_Y,
                  hidden_dim=config.HIDDEN_DIM,
                  num_hidden_layers=config.NUM_HIDDEN_LAYERS,
