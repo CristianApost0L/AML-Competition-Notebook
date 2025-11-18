@@ -75,29 +75,29 @@ def load_and_prep_data_direct(train_path, coco_path, use_coco, noise_threshold, 
     
     This function prepares data for full-retrieval evaluation.
     """
-    print("\n--- 1. Configurazione Parametri ---")
+    print("\n--- 1. Set seed ---")
     np.random.seed(random_seed)
     torch.manual_seed(random_seed)
 
-    print("\n--- 2. Caricamento e Merge dei Dataset ---")
+    print("\n--- 2. Load Dataset ---")
     if use_coco:
         # (Insert the entire 'if USE_COCO_DATASET:' block from Cell 4 here)
         # ...
-        print("Unione dei due dataset...")
+        print("Using coco: merging the two datasets...")
         # ... (concatenation logic) ...
         pass # Placeholder for the large block
     else:
-        print(f"Modalità: Solo Dataset Originale")
-        print(f"Caricamento dataset: {train_path}")
+        print(f"Using just Original Dataset")
+        print(f"Loading dataset: {train_path}")
         train_data = load_data(train_path)
         captions_text = train_data['captions/text']
         caption_embd_np = train_data['captions/embeddings']
         gallery_images_names = train_data['images/names']
         gallery_images_embeddings = train_data['images/embeddings']
         label_mat = train_data['captions/label']
-        print(f"  Dataset caricato: {label_mat.shape[0]} captions, {label_mat.shape[1]} immagini.")
+        print(f"  Dataset loaded: {label_mat.shape[0]} captions, {label_mat.shape[1]} images.")
 
-    print("\n--- 3. Preparazione Dati e Pulizia Rumore ---")
+    print("\n--- 3. Data Preparation and Noise Cleaning ---")
     train_data_dict = {
         'captions/text': captions_text, 'captions/embeddings': caption_embd_np, 
         'images/embeddings': gallery_images_embeddings, 'captions/label': label_mat,
@@ -105,7 +105,7 @@ def load_and_prep_data_direct(train_path, coco_path, use_coco, noise_threshold, 
     }
     
     X, y, label_tensor = prepare_train_data(train_data_dict)
-    print(f"Dataset Totale Iniziale: {len(X)} coppie.")
+    print(f"Initial dataset size: {len(X)} pairs.")
     del train_data_dict
     if 'train_data' in locals(): del train_data
     del label_tensor
@@ -113,10 +113,10 @@ def load_and_prep_data_direct(train_path, coco_path, use_coco, noise_threshold, 
 
     mask = np.ones(len(X), dtype=bool) 
     if config.CLEAN_DATA:
-        print(f"\\nAvvio pulizia rumore (Soglia < {noise_threshold})...")
+        print(f"\\nStarting noise cleaning (Threshold < {noise_threshold})...")
         num_images = gallery_images_embeddings.shape[0]
         noisy_indices_set = set()
-        for j in tqdm(range(num_images), desc="Analisi Rumore"):
+        for j in tqdm(range(num_images), desc="Noise Analysis"):
             cap_idx = np.where(label_mat[:, j])[0]
             if len(cap_idx) < 2: continue 
             group_embds = caption_embd_np[cap_idx]
@@ -125,12 +125,12 @@ def load_and_prep_data_direct(train_path, coco_path, use_coco, noise_threshold, 
             for i, s in enumerate(sims):
                 if s < noise_threshold:
                     noisy_indices_set.add(cap_idx[i])
-        print(f"Identificati {len(noisy_indices_set)} campioni rumorosi.")
+        print(f"Identified {len(noisy_indices_set)} noisy samples.")
         mask[list(noisy_indices_set)] = False
     del caption_embd_np, noisy_indices_set
     gc.collect()
 
-    print("\n--- 4. Applicazione Filtro e Split Train/Val ---")
+    print("\n--- 4. Applying Filter and Train/Val Split ---")
     X = X[mask]
     y = y[mask]
     label = torch.from_numpy(label_mat[mask])
@@ -139,7 +139,7 @@ def load_and_prep_data_direct(train_path, coco_path, use_coco, noise_threshold, 
     gc.collect()
 
     DATASET_SIZE = len(X)
-    print(f"Dataset Pulito: {DATASET_SIZE} coppie.")
+    print(f"Clean dataset: {DATASET_SIZE} pairs.")
     
     n_train = int((1 - val_split_ratio) * DATASET_SIZE)
     TRAIN_SPLIT = torch.zeros(DATASET_SIZE, dtype=torch.bool)
@@ -152,7 +152,7 @@ def load_and_prep_data_direct(train_path, coco_path, use_coco, noise_threshold, 
     del X, y
     gc.collect()
 
-    print("\n--- 5. Preparazione Galleria per Retrieval ---")
+    print("\n--- 5. Preparing Gallery for Retrieval ---")
     label_cpu = label.cpu() 
     img_VAL_SPLIT = label_cpu[~TRAIN_SPLIT].sum(dim=0) > 0
     del label_cpu
@@ -168,7 +168,7 @@ def load_and_prep_data_direct(train_path, coco_path, use_coco, noise_threshold, 
     gc.collect()
 
     print(f"Query (Captions):      {len(val_text_embd)}")
-    print(f"Galleria (Immagini):   {len(val_img_embd_unique)}")
+    print(f"Gallery (Images):      {len(val_img_embd_unique)}")
     print(f"Ground Truth Indices: {val_label_gt.shape}")
     
     # Return all the necessary components

@@ -51,7 +51,7 @@ class ResidualBlock(nn.Module):
         return self.final_dropout(self.final_activation(x + self.block(x)))
 
 class ResidualMLP_BN(nn.Module):
-    """ Architettura base del notebook AML_MLP_867 (con BatchNorm1d) """
+    """ Uses BatchNorm instead of LayerNorm """
     def __init__(self, input_dim=1024, output_dim=1536, hidden_dim=1536, num_layers=2, dropout=0.3):
         super().__init__()
         self.input_layer = nn.Sequential(

@@ -90,7 +90,7 @@ def evaluate_retrieval(translated_embd, image_embd, gt_indices, max_indices = 99
 
 # --- Wrapper from Notebook 2 (for evaluation) ---
 class MLPWrapper:
-    """ Wrapper per valutazione. Normalizza SEMPRE l'output per Cosine Similarity. """
+    """ Wrapper for evaluation. Always normalizes output for Cosine Similarity. """
     def __init__(self, model, device):
         self.model = model
         self.device = device
@@ -191,7 +191,6 @@ def evaluate_retrieval_full(
 def aml_inbatch_retrieval(pred_embeds, target_embeds, batch_size=100):
     """
     AML Competition-style In-Batch (N-vs-N) retrieval metric.
-    From aml-notebook_finale.ipynb.
     """
     pred = F.normalize(pred_embeds, p=2, dim=1)
     targ = F.normalize(target_embeds, p=2, dim=1)

@@ -24,7 +24,7 @@ def main():
     args = parser.parse_args()
 
     DEVICE = config.DEVICE
-    print(f"--- Generazione Submission con Modello: {args.model_type} ---")
+    print(f"--- Generate Submission with Model: {args.model_type} ---")
     
     models = []
     if args.model_type == 'I':
@@ -42,7 +42,7 @@ def main():
             # Assumes models were trained and saved with seeds in their names
             # For simplicity, let's assume they are in memory (this is a limitation of this script)
             # A better way: train_single_modern_model should save its model to a file
-            print("Caricamento Modelli Modern... (Questo script assume che siano stati addestrati)")
+            print("Load Modern Models... (not implemented in this script)")
             # This is complex, as they are not saved to disk by default.
             # For a real script, train_single_modern_model should save to "modern_seed_42.pth" etc.
             raise NotImplementedError("Modern model loading needs saved files.")
@@ -62,16 +62,16 @@ def main():
     test_data = load_data(config.TEST_DATA_PATH)
     X_test_np = test_data['captions/embeddings']
     test_ids = test_data['captions/ids']
-    print(f"Dati di test caricati: {len(X_test_np)} campioni.")
+    print(f"Test data loaded: {len(X_test_np)} samples.")
 
-    # --- Genera Predizioni ---
-    print("Generazione predizioni sul test set...")
+    # --- Generate Predictions ---
+    print("Generate prediction of test data...")
     y_test_pred = wrapper_submission.translate(X_test_np, batch_size=512)
 
-    # --- Salva File ---
+    # --- Save File ---
     submission_filename = f"submission_direct_{args.model_type}.csv"
     generate_submission(test_ids, y_test_pred, submission_filename)
-    print(f"✅ Submission salvata: {submission_filename}")
+    print(f"✅ Submission saved: {submission_filename}")
 
 if __name__ == "__main__":
     main()

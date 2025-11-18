@@ -61,7 +61,7 @@ def train_irp_refiner(model, train_loader, val_loader, device, epochs, lr,
             
             best_state = copy.deepcopy(model.state_dict())
             
-            print(f"   ✓ Resuming from epoch {start_epoch}")
+            print(f"   Resuming from epoch {start_epoch}")
             
         except Exception as e:
             print(f"Failed to load checkpoint: {e}. Starting from scratch...")
@@ -158,7 +158,7 @@ def train_irp_refiner(model, train_loader, val_loader, device, epochs, lr,
             epochs_no_improve += 1
             
         if epochs_no_improve >= patience:
-            print(f"   ⛔ Early Stopping at epoch {epoch+1} (no improvement for {patience} epochs)")
+            print(f"Early Stopping at epoch {epoch+1} (no improvement for {patience} epochs)")
             break
 
     print(f"\\nTraining completed. Best Val Loss: {best_val_loss:.6f}")
@@ -177,7 +177,6 @@ def train_irp_refiner(model, train_loader, val_loader, device, epochs, lr,
 def train_standard_direct(model, train_loader, val_loader, epochs, lr, save_path, patience, use_norm_in_loss, device):
     """
     Training function for 'direct' models (ResidualMLP_BN, SwiGLUMLP).
-    From aml-notebook_finale.ipynb.
     """
     logit_scale = nn.Parameter(torch.ones([], device=device) * np.log(1 / 0.07))
     optimizer = optim.AdamW(list(model.parameters()) + [logit_scale], lr=lr, weight_decay=1e-4)
@@ -187,9 +186,9 @@ def train_standard_direct(model, train_loader, val_loader, epochs, lr, save_path
     no_improve = 0
     
     loss_strategy = "Norm-in-Loss" if use_norm_in_loss else "No-Norm-Loss (Raw)"
-    print(f"\n--- Inizio Training Standard Direct ({save_path}) ---")
-    print(f"Strategia Loss: {loss_strategy}")
-    
+    print(f"\n--- Start Training Standard Direct ({save_path}) ---")
+    print(f"Loss Strategy: {loss_strategy}")
+
     for epoch in range(epochs):
         model.train()
         train_loss = 0
@@ -240,8 +239,8 @@ def train_standard_direct(model, train_loader, val_loader, epochs, lr, save_path
             if no_improve >= patience:
                 print(f"Early Stopping! (Ep {epoch+1})")
                 break
-                
-    print(f"✅ Training completato. Miglior modello salvato in {save_path}")
+
+    print(f"Training completed. Best model saved to {save_path}")
     model.load_state_dict(torch.load(save_path))
     return model
 
@@ -334,7 +333,7 @@ def train_single_modern_model(seed, X_tr, y_tr, X_vl, y_vl, hparams, patience, d
         else:
             no_improve += 1
             if no_improve >= patience:
-                print(f"   ⛔ Early Stopping at epoch {epoch+1}")
+                print(f"   Early Stopping at epoch {epoch+1}")
                 break
     
     print(f"   ✔️ Seed {seed} completed | Best Val Loss: {best_loss:.4f}")
