@@ -12,7 +12,7 @@ Both methods are modular, and the codebase is refactored from a single notebook 
 
 - **`src/`**: Core Python package with all model and utility code
 - **`scripts/`**: Command-line scripts for training and prediction
-- **`notebooks/`**: Jupyter notebooks
+- **`notebooks/`**: Jupyter notebook for the Submissions
 
 ---
 
